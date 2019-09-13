@@ -1,0 +1,83 @@
+# Inconsistencia PCA y modelo APT
+# agosto 16
+# Actividad 1
+
+library(MASS)
+
+sigma2b <- 0.01
+sigma2f <- 0.000158
+sigma2e <- 0.0045
+k       <- 4
+n       <- 80
+b       <- 1
+
+p <- 50:200
+# primera parte
+
+lambda1 <- sapply(p, function(x) {sigma2f*x*(b*b*k+sigma2b)+sigma2e}) 
+plot(p,lambda1)
+
+lambdai <- sapply(p, function(x) {sigma2f*x*sigma2b+sigma2e}) 
+plot(p,lambdai)
+
+lambdaj <-sapply (p, function(x){sigma2e})
+plot(p,lambdaj)
+
+
+# Segunda parte
+
+# función que da las lambdas
+funcion1 <- function(p, k, n, b, sigma2b, sigma2e, sigma2f){
+  
+  L <- replicate(n=k,{sample(mvrnorm(n = p, b, sigma2b))}) #pxk
+  B <- replicate(n=k,{sample(mvrnorm(n = n, 0, sigma2f))}) #nxk
+  E <- replicate(n=n,{sample(mvrnorm(n=p, 0, sigma2e))})   #pxn
+  R <- L%*%t(B)+E
+  CovR <-(1/n)*R%*%t(R)
+  lambdas <- eigen(CovR)
+  lambdasvalues <- lambdas$values[1:5]  
+  lambdasvalues
+}
+
+# función que genera los 100 repeticiones
+funcion2 <- function(p, k=4, n=80, b=1, sigma2b=0.01, sigma2e=0.0045, sigma2f=0.000158){
+  
+  li <- replicate(n=100, {funcion1(p, k, n, b, sigma2b, sigma2e, sigma2f)})
+  li <- t(li)
+  liprom <- colMeans(li)
+  liprom <- as.matrix(liprom)
+  liquant <- quantile(li[,1])
+  liquant <- liquant[c(2,4)]
+  a <- c(liprom, liquant)
+  a <-t(a)
+  a
+}
+
+result <- sapply(p, funcion2)
+result <- t(result)
+
+# graficos
+
+# teóricos
+plot(p, lambda1, type = 'l', col='aquamarine4', ylim = c(0, 0.5), main = 'Lambdas teóricos', ylab = 'lambda', xlab = 'p')
+lines(p, lambdai, col='chocolate3')
+lines(p, lambdaj, col='cornsilk4')
+
+# Simulados
+plot(p, result[,1], type = 'l', col='blue4', ylim = c(0, 0.14), main = 'Simulación', ylab = 'lambdas', xlab = 'p')
+lines(p, result[,2], col='chartreuse4')
+lines(p, result[,3], col='brown4')
+lines(p, result[,4], col='darkorchid4')
+lines(p, result[,5], col='gray1')
+
+
+plot(p, result[,1], type = 'l', col='blue', ylim = c(0, 0.2), main = 'Lambdas teóricas y por simulación', ylab = 'lambdas', xlab = 'p')
+lines(p, result[,2], col='hotpink')
+lines(p, result[,3], col='hotpink4')
+lines(p, result[,4], col='indianred')
+lines(p, result[,5], col='indianred3')
+points(p, result[,6], col='purple1')
+points(p, result[,7], col='orchid3')
+lines(p, lambda1, col='seagreen')
+lines(p, lambdai, col='red')
+lines(p, lambdaj, col='darkgoldenrod4')
