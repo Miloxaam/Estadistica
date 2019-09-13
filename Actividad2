@@ -1,0 +1,128 @@
+## Ejercicio 2
+## Cómo lucen los eigenvalores de una matriz de covarianza gaussiana?
+## Matriz Z de dimensión pxn
+numero <-12
+p <- 30
+n1 <- 30
+n2 <- 300
+mu <-0
+var <-1
+sd <- 1
+equis <- 1:30
+
+## Matriz diagonal D de pxp X=DZ
+
+D2 <- diag(3, 30, 30)
+
+for (i in 1:6) {
+  D2[i,i]<-numero
+  numero <- numero-1
+}
+
+D <- sqrt(D2)
+
+# Caso de n=30
+Z <- replicate(n=n1,{sample(rnorm(n=p, mu, sd))})
+X1 <- D%*%Z
+S1 <- (1/n1)*X1%*%t(X1)
+eigenvalues1 <- eigen(S1)
+eigenvalues1 <- eigenvalues1$values
+eigenvalues1 <- t(eigenvalues1)
+
+plot(equis, eigenvalues1, type = 'l', col='red', ylim = c(0, 200), main = 'n=30', ylab = 'lambdas', xlab = 'componentes')
+
+# Caso de n=300
+Z <- replicate(n=n2,{sample(rnorm(n=p, mu, sd))})
+X2 <- D%*%Z
+S2 <- (1/n2)*X2%*%t(X2)
+eigenvalues2 <- eigen(S2)
+eigenvalues2 <- eigenvalues2$values
+eigenvalues2 <- t(eigenvalues2)
+
+plot(equis, eigenvalues2, type = 'l', col='blue', ylim = c(0, 200), main = 'n=300', ylab = 'lambdas', xlab = 'componentes')
+
+# Se toman los primeros 6 eigenvalores
+
+##############################################################################################
+
+S_funcion <- function(n2, p, mu, sd){
+  Z <- replicate(n=n2,{sample(rnorm(n=p, mu, sd))})
+  #X2 <- D%*%Z
+  S2 <- (1/n2)*Z%*%t(Z)
+  eigenvalues2 <- eigen(S2)
+  eigenvalues2 <- eigenvalues2$values
+  eigenvalues2
+}
+
+
+simulacion <- 1000
+
+data_lambda <- replicate(n=simulacion, S_funcion(300, 30, 0, 1))
+hist(data_lambda, freq = FALSE)
+
+######################################################################################
+
+lambda_i <- seq(from = 0.5, to = 1.6, by = 0.2)
+
+p_lambda <- function(lambdas_i){
+  c <- 30/300
+  L_max <- (1+sqrt(c))^2
+  L_min <- (1-sqrt(c))^2
+  pl <- sqrt((L_max-lambdas_i)*(lambdas_i-L_min))/(2*pi*c*lambdas_i)
+  pl
+}
+
+y <- p_lambda(lambda_i)
+
+hist(data_lambda, freq = FALSE)
+lines(lambda_i, y)
+
+##########################################################################
+library(reshape2)
+library(ggplot2)
+
+p4 <- 40
+n4 <- 10
+n5 <- 1000
+
+# caso n= 10
+Z4 <- replicate(n=n4,{sample(rnorm(n=p4, mu, sd))})
+C4 <- (1/n4)*Z4%*%t(Z4)
+
+heatm4 <- melt(C4)
+ggplot(data = heatm4, aes(x=Var1, y=Var2, fill=value)) + 
+  geom_tile()
+
+C4_d <- diag(C4)
+C4_nd <-lower.tri(C4, diag = FALSE)
+C4_nd <- C4[C4_nd]
+
+media_C4d <- mean(C4_d)
+media_C4nd <- mean(C4_nd)
+
+S2_d4 <- var(C4_d)
+S2_nd4 <- var(C4_nd)
+
+S_d4 <- sqrt(S2_d4)
+S_nd4 <- sqrt(S2_nd4)
+
+# caso n=1000
+Z5 <- replicate(n=n5,{sample(rnorm(n=p4, mu, sd))})
+C5 <- (1/n5)*Z5%*%t(Z5)
+
+heatm5 <- melt(C5)
+ggplot(data = heatm5, aes(x=Var1, y=Var2, fill=value)) + 
+  geom_tile()
+
+C5_d <- diag(C5)
+C5_nd <-lower.tri(C5, diag = FALSE)
+C5_nd <- C5[C5_nd]
+
+media_C5d <- mean(C5_d)
+media_C5nd <- mean(C5_nd)
+
+S2_d5 <- var(C5_d)
+S2_nd5 <- var(C5_nd)
+
+S_d5 <- sqrt(S2_d5)
+S_nd5 <- sqrt(S2_nd5)
